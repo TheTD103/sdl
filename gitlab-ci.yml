@@ -1,0 +1,278 @@
+image: docker
+services:
+  - docker:dind
+variables:
+  PROJECT: sdl
+  PROJECT_PATH_CMS: /opt/sdl/cms
+  PROJECT_PATH_CMS_1: /opt/sdl/cms_1
+  PROJECT_PATH_PORTAL: /opt/sdl/portal
+  PROJECT_PATH_WEB: /opt/sdl/web
+  TELEGRAM_URL_DEV: https://api.telegram.org/bot5925823300:AAH_mKTs4lnhXVYINXYMlqj4xWEX2G1qYs0/sendMessage
+  CHAT_ID_DEV: -832663544
+  TELEGRAM_URL_PRO: https://api.telegram.org/bot6811078946:AAFWdcFkybh7xWUT4MYOeR8acDNaVWAnv-s/sendMessage
+  CHAT_ID_PRO: -4073534343
+  MESSAGE_DEV: Hệ thống Sở Du Lịch DEV Project $CI_PROJECT_NAME run job $CI_JOB_NAME pipeline $CI_PIPELINE_URL
+  MESSAGE_PRO: Hệ thống Sở Du Lịch PRO Project $CI_PROJECT_NAME run job $CI_JOB_NAME pipeline $CI_PIPELINE_URL
+  MESSAGE_TRIGGER: 🆘❌❌🆘 Hệ thống Sở Du Lịch PRO xuất hiện trigger mới, Project $CI_PROJECT_NAME run job $CI_JOB_NAME pipeline $CI_PIPELINE_URL
+stages:
+  - deploy
+  - test
+  - trigger
+deploy-dev_CMS:
+  stage: deploy
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - echo "$SSH_PRIVATE_KEY_DEV" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_CMS_DEV" ]; then
+        ssh $SSH_USER_DEV@$SSH_SERVER_IP_DEV "sudo docker login $REGISTRY_VIVAS --username '$REGISTRY_USER_CMS' --password $REGISTRY_PASSWORD_CMS && cd $PROJECT_PATH_CMS && sudo sed -i "s#CURRENT_IMAGE=.*#$CURRENT_IMAGE_CMS_DEV#" .env && sudo sh run.sh"
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_CMS_DEV
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_CMS_DEV" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_CMS_DEV" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV Failed❌'"; fi
+test-dev_CMS:
+  stage: test
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_CMS_DEV" ]; then
+        apk add --update busybox-extras curl && rm -rf /var/cache/apk/*
+        busybox-extras telnet 10.84.86.67 65438
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_CMS_DEV
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_CMS_DEV" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_CMS_DEV" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV Failed❌'"; fi
+deploy-dev_Portal:
+  stage: deploy
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - echo "$SSH_PRIVATE_KEY_DEV" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_PORTAL_DEV" ]; then
+        ssh $SSH_USER_DEV@$SSH_SERVER_IP_DEV "sudo docker login $REGISTRY_VIVAS --username '$REGISTRY_USER_PORTAL' --password $REGISTRY_PASSWORD_PORTAL && cd $PROJECT_PATH_PORTAL && sudo sed -i "s#CURRENT_IMAGE=.*#$CURRENT_IMAGE_PORTAL_DEV#" .env && sudo sh run.sh"
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_PORTAL_DEV
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_PORTAL_DEV" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_PORTAL_DEV" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV Failed❌'"; fi
+test-dev_PORTAL:
+  stage: test
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_PORTAL_DEV" ]; then
+        apk add --update busybox-extras curl && rm -rf /var/cache/apk/*
+        busybox-extras telnet 10.84.86.67 65432
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_PORTAL_DEV
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_PORTAL_DEV" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_PORTAL_DEV" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV Failed❌'"; fi
+deploy-dev_WEB:
+  stage: deploy
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - echo "$SSH_PRIVATE_KEY_DEV" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_WEB_DEV" ]; then
+        ssh $SSH_USER_DEV@$SSH_SERVER_IP_DEV "sudo docker login $REGISTRY_VIVAS --username '$REGISTRY_USER_PORTAL' --password $REGISTRY_PASSWORD_PORTAL && cd $PROJECT_PATH_WEB && sudo sed -i "s#CURRENT_IMAGE=.*#$CURRENT_IMAGE_WEB_DEV#" .env && sudo sh run.sh"
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_WEB_DEV
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_WEB_DEV" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_WEB_DEV" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV Failed❌'"; fi
+test-dev_WEB:
+  stage: test
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_WEB_DEV" ]; then
+        apk add --update busybox-extras curl && rm -rf /var/cache/apk/*
+        busybox-extras telnet 10.84.86.67 23456
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_WEB_DEV
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_WEB_DEV" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_WEB_DEV" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_DEV" -d "chat_id=$CHAT_ID_DEV&text='$MESSAGE_DEV Failed❌'"; fi
+trigger_cms:
+  stage: deploy
+  before_script:
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_CMS_PRO" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_TRIGGER'"; fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_CMS_PRO
+trigger_portal:
+  stage: deploy
+  before_script:
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_PORTAL_PRO" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_TRIGGER'"; fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_PORTAL_PRO
+trigger_web:
+  stage: deploy
+  before_script:
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_WEB_PRO" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_TRIGGER'"; fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_WEB_PRO
+deploy-pro_01_CMS:
+  stage: deploy
+  when: manual
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - echo "$SSH_PRIVATE_KEY_PRO_01" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_CMS_PRO" ]; then
+        ssh $SSH_USER_PRO_01@$SSH_SERVER_IP_PRO_01 "sudo docker login $REGISTRY_VIVAS --username '$REGISTRY_USER_CMS' --password $REGISTRY_PASSWORD_CMS && cd $PROJECT_PATH_CMS && sudo sed -i "s#CURRENT_IMAGE=.*#$CURRENT_IMAGE_CMS_PRO#" .env && sudo sh run.sh"
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_CMS_PRO
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_CMS_PRO" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_CMS_PRO" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO Failed❌'"; fi
+deploy-pro_01_Portal:
+  stage: deploy
+  when: manual
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - echo "$SSH_PRIVATE_KEY_PRO_01" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_PORTAL_PRO" ]; then
+        ssh $SSH_USER_PRO_01@$SSH_SERVER_IP_PRO_01 "sudo docker login $REGISTRY_VIVAS --username '$REGISTRY_USER_PORTAL' --password $REGISTRY_PASSWORD_PORTAL && cd $PROJECT_PATH_PORTAL && sudo sed -i "s#CURRENT_IMAGE=.*#$CURRENT_IMAGE_PORTAL_PRO#" .env && sudo sh run.sh"
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_PORTAL_PRO
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_PORTAL_PRO" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_PORTAL_PRO" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO Failed❌'"; fi
+deploy-pro_01_WEB:
+  stage: deploy
+  when: manual
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - echo "$SSH_PRIVATE_KEY_PRO_01" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_WEB_PRO" ]; then
+        ssh $SSH_USER_PRO_01@$SSH_SERVER_IP_PRO_01 "sudo docker login $REGISTRY_VIVAS --username '$REGISTRY_USER_PORTAL' --password $REGISTRY_PASSWORD_PORTAL && cd $PROJECT_PATH_WEB && sudo sed -i "s#CURRENT_IMAGE=.*#$CURRENT_IMAGE_WEB_PRO#" .env && sudo sh run.sh"
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_WEB_PRO
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_WEB_PRO" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_WEB_PRO" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO Failed❌'"; fi
+deploy-pro_02_CMS:
+  stage: deploy
+  when: manual
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - echo "$SSH_PRIVATE_KEY_PRO_02" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_CMS_PRO" ]; then
+        ssh $SSH_USER_PRO_02@$SSH_SERVER_IP_PRO_02 "sudo docker login $REGISTRY_VIVAS --username '$REGISTRY_USER_CMS' --password $REGISTRY_PASSWORD_CMS && cd $PROJECT_PATH_CMS && sudo sed -i "s#CURRENT_IMAGE=.*#$CURRENT_IMAGE_CMS_PRO#" .env && sudo sh run.sh"
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_CMS_PRO
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_CMS_PRO" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_CMS_PRO" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO Failed❌'"; fi
+deploy-pro_02_Portal:
+  stage: deploy
+  when: manual
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - echo "$SSH_PRIVATE_KEY_PRO_02" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_PORTAL_PRO" ]; then
+        ssh $SSH_USER_PRO_02@$SSH_SERVER_IP_PRO_02 "sudo docker login $REGISTRY_VIVAS --username '$REGISTRY_USER_PORTAL' --password $REGISTRY_PASSWORD_PORTAL && cd $PROJECT_PATH_PORTAL && sudo sed -i "s#CURRENT_IMAGE=.*#$CURRENT_IMAGE_PORTAL_PRO#" .env && sudo sh run.sh"
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_PORTAL_PRO
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_PORTAL_PRO" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_PORTAL_PRO" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO Failed❌'"; fi
+deploy-pro_02_WEB:
+  stage: deploy
+  when: manual
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - echo "$SSH_PRIVATE_KEY_PRO_02" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - apk add --update curl && rm -rf /var/cache/apk/*
+  script:
+    - >
+      if [ ! -z "$CURRENT_IMAGE_WEB_PRO" ]; then
+        ssh $SSH_USER_PRO_02@$SSH_SERVER_IP_PRO_02 "sudo docker login $REGISTRY_VIVAS --username '$REGISTRY_USER_PORTAL' --password $REGISTRY_PASSWORD_PORTAL && cd $PROJECT_PATH_WEB && sudo sed -i "s#CURRENT_IMAGE=.*#$CURRENT_IMAGE_WEB_PRO#" .env && sudo sh run.sh"
+      fi
+  only:
+    variables:
+      - $CURRENT_IMAGE_WEB_PRO
+  after_script:
+    - if [ ! -z "$CURRENT_IMAGE_WEB_PRO" ] && [ "$CI_JOB_STATUS" == "success" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO success✅'"; fi
+    - if [ ! -z "$CURRENT_IMAGE_WEB_PRO" ] && [ "$CI_JOB_STATUS" == "failed" ]; then curl -X POST "$TELEGRAM_URL_PRO" -d "chat_id=$CHAT_ID_PRO&text='$MESSAGE_PRO Failed❌'"; fi
